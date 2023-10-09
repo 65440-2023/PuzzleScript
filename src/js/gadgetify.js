@@ -140,22 +140,8 @@ function placePlayer(pos) {
     calculateRowColMasks();
 }
 
-function teleportPlayer(pos) {
-    removePlayers();
-    placePlayer(pos);
-}
-
-function updateState(state, action) {
-    oldGlobals = saveGlobals();
-    window.state = state;
-    processInput(dir, true);
-    state = window.state;
-    restoreGlobals();
-    return state;
-}
-
 // similar to convertLevelToString, but in the right order
-// don't want to edit the original because every test relies on it
+// i don't want to edit the original because every test relies on it
 function convertLevelToString_fixed() {
     var out = '';
     var seenCells = {};
