@@ -2869,7 +2869,9 @@ function processInput(dir,dontDoWin,dontModify) {
 			if (dontDoWin===undefined){
 				dontDoWin = false;
 			}
-	    	checkWin( dontDoWin );
+			if (!dontDoWin) {
+	    	    checkWin( dontDoWin );
+			}
 	    }
 
 	    if (!winning) {
@@ -2933,6 +2935,75 @@ function processInput(dir,dontDoWin,dontModify) {
 	return modified;
 }
 
+function winConditionSatisfied(wincondition) {
+	var filter1 = wincondition[1];
+	var filter2 = wincondition[2];
+	var aggr1 = wincondition[4];
+	var aggr2 = wincondition[5];
+
+	var rulePassed=true;
+	
+	const f1 = aggr1 ? c=>filter1.bitsSetInArray(c) : c=>!filter1.bitsClearInArray(c);
+	const f2 = aggr2 ? c=>filter2.bitsSetInArray(c) : c=>!filter2.bitsClearInArray(c);
+
+	switch(wincondition[0]) {
+		case -1://NO
+		{
+			for (var i=0;i<level.n_tiles;i++) {
+				var cell = level.getCellInto(i,_o10);
+				if ( (f1(cell.data)) &&  
+					 (f2(cell.data)) ) {
+					rulePassed=false;
+					break;
+				}
+			}
+
+			break;
+		}
+		case 0://SOME
+		{
+			var passedTest=false;
+			for (var i=0;i<level.n_tiles;i++) {
+				var cell = level.getCellInto(i,_o10);
+				if ( (f1(cell.data)) &&  
+					 (f2(cell.data)) ) {
+					passedTest=true;
+					break;
+				}
+			}
+			if (passedTest===false) {
+				rulePassed=false;
+			}
+			break;
+		}
+		case 1://ALL
+		{
+			for (var i=0;i<level.n_tiles;i++) {
+				var cell = level.getCellInto(i,_o10);
+				if ( (f1(cell.data)) &&  
+					 (!f2(cell.data)) ) {
+					rulePassed=false;
+					break;
+				}
+			}
+			break;
+		}
+	}
+	return rulePassed
+}
+
+function winConditionsSatisfied() {
+	if (state.winconditions.length>0)  {
+		for (var wcIndex=0;wcIndex<state.winconditions.length;wcIndex++) {
+			if (!winConditionSatisfied(state.winconditions[wcIndex])) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 function checkWin(dontDoWin) {
 
 	if (levelEditorOpened) {
@@ -2951,72 +3022,7 @@ function checkWin(dontDoWin) {
 		return;
 	}
 
-	var won= false;
-	if (state.winconditions.length>0)  {
-		var passed=true;
-		for (var wcIndex=0;wcIndex<state.winconditions.length;wcIndex++) {
-			var wincondition = state.winconditions[wcIndex];
-			var filter1 = wincondition[1];
-			var filter2 = wincondition[2];
-			var aggr1 = wincondition[4];
-			var aggr2 = wincondition[5];
-
-			var rulePassed=true;
-			
-			const f1 = aggr1 ? c=>filter1.bitsSetInArray(c) : c=>!filter1.bitsClearInArray(c);
-			const f2 = aggr2 ? c=>filter2.bitsSetInArray(c) : c=>!filter2.bitsClearInArray(c);
-
-			switch(wincondition[0]) {
-				case -1://NO
-				{
-					for (var i=0;i<level.n_tiles;i++) {
-						var cell = level.getCellInto(i,_o10);
-						if ( (f1(cell.data)) &&  
-							 (f2(cell.data)) ) {
-							rulePassed=false;
-							break;
-						}
-					}
-
-					break;
-				}
-				case 0://SOME
-				{
-					var passedTest=false;
-					for (var i=0;i<level.n_tiles;i++) {
-						var cell = level.getCellInto(i,_o10);
-						if ( (f1(cell.data)) &&  
-							 (f2(cell.data)) ) {
-							passedTest=true;
-							break;
-						}
-					}
-					if (passedTest===false) {
-						rulePassed=false;
-					}
-					break;
-				}
-				case 1://ALL
-				{
-					for (var i=0;i<level.n_tiles;i++) {
-						var cell = level.getCellInto(i,_o10);
-						if ( (f1(cell.data)) &&  
-							 (!f2(cell.data)) ) {
-							rulePassed=false;
-							break;
-						}
-					}
-					break;
-				}
-			}
-			if (rulePassed===false) {
-				passed=false;
-			}
-		}
-		won=passed;
-	}
-
-	if (won) {
+	if (winConditionsSatisfied()) {
 		if (runrulesonlevelstart_phase){
 			consolePrint("Win Condition Satisfied (However this is in the run_rules_on_level_start rule pass, so I'm going to ignore it for you.  Why would you want to complete a level before it's already started?!)");		
 		} else {
