@@ -2993,15 +2993,12 @@ function winConditionSatisfied(wincondition) {
 }
 
 function winConditionsSatisfied() {
-	if (state.winconditions.length>0)  {
-		for (var wcIndex=0;wcIndex<state.winconditions.length;wcIndex++) {
-			if (!winConditionSatisfied(state.winconditions[wcIndex])) {
-				return false;
-			}
+	for (var wcIndex=0;wcIndex<state.winconditions.length;wcIndex++) {
+		if (!winConditionSatisfied(state.winconditions[wcIndex])) {
+			return false;
 		}
-		return true;
 	}
-	return false;
+	return true;
 }
 
 function checkWin(dontDoWin) {
@@ -3022,7 +3019,7 @@ function checkWin(dontDoWin) {
 		return;
 	}
 
-	if (winConditionsSatisfied()) {
+	if (state.winconditions.length>0 && winConditionsSatisfied()) {
 		if (runrulesonlevelstart_phase){
 			consolePrint("Win Condition Satisfied (However this is in the run_rules_on_level_start rule pass, so I'm going to ignore it for you.  Why would you want to complete a level before it's already started?!)");		
 		} else {
