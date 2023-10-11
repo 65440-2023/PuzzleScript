@@ -1,4 +1,5 @@
 function gadgetifyClick() {
+    cache_console_messages = true;
     compile("restart");
 
     if (!canGadgetify()) {
@@ -19,19 +20,31 @@ function gadgetifyClick() {
 }
 
 function canGadgetify() {
+    if (!('player' in state.objects || 'player' in state.synonymsDict)) {
+        consolePrint('`Player` must be an object or a synonym.');
+        return false;
+    }
+    if (!('wall' in state.objects || 'wall' in state.synonymsDict)) {
+        consolePrint('`Wall` must be an object or a synonym.');
+        return false;
+    }
+    if (!('port' in state.objects || 'port' in state.synonymsDict)) {
+        consolePrint('`Port` must be an object or a synonym.');
+        return false;
+    }
     for (const ruleGroup of state.rules) {
         for (const rule of ruleGroup) {
             if (rule.isRandom) {
-                consolePrint(`Randomness is not supported (line ${rule.lineNumber}).`);
+                consolePrint(`Randomness is not supported (line ${rule.lineNumber}).`, false, rule.lineNumber);
                 return false;
             }
-            if (rule.ellipsisCount > 0) {
-                consolePrint(`Ellipses are not supported (line ${rule.lineNumber}).`);
+            if (rule.ellipsisCount > 0 || rule.patterns.length > 1) {
+                consolePrint(`Nonlocal rules are not supported (line ${rule.lineNumber}).`, false, rule.lineNumber);
                 return false;
             }
             for (const command of rule.commands) {
                 if (command.includes("win")) {
-                    consolePrint(`WIN action is not supported (line ${rule.lineNumber}).`);
+                    consolePrint(`WIN action is not supported (line ${rule.lineNumber}).`, false, rule.lineNumber);
                     return false;
                 }
             }
@@ -39,7 +52,7 @@ function canGadgetify() {
     }
     for (const wincondition of state.winconditions) {
         if (wincondition[0] === 0) {
-            consolePrint(`ANY goals are not supported (line ${wincondition[3]}).`);
+            consolePrint(`ANY goals are not supported (line ${wincondition[3]}).`, false, wincondition[3]);
             return false;
         }
     }
