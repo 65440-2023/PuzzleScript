@@ -76,7 +76,7 @@ class Gadget {
       this.acceptingPred,
       this.psState,
       l => this.psPorts(this.locations.find(l2 => fnLoc(l2) == l)),
-      s => this.psLevels(this.locations.find(s2 => fnState(s2) == s))
+      s => this.psLevels(this.states.find(s2 => fnState(s2) == s))
     );
   }
 
