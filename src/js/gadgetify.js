@@ -9,9 +9,12 @@ function gadgetifyClick() {
     else {
         for (let i = 0; i < state.levels.length; i++) {
             if (state.levels[i].message === undefined) {
-                consolePrint(`Processing level ${i}.`);
+                consolePrint(`Processing level ${i + 1}.`);
                 const gadget = gadgetifyLevel(i);
-                consolePrint(JSON.stringify(gadget));
+                const simplified = simplifyGadget(gadget, '0');
+                const relabeled = relabelStates(simplified);
+                printGadget(simplified);
+                printGadget(relabeled);
             }
         }
     }
@@ -78,7 +81,7 @@ function gadgetifyLevel(levelIndex) {
         level = gstateToLevel[fromState].clone();
         RebuildLevelArrays();
         if (winConditionsSatisfied()) {
-            acceptingGstates.push(fromState);
+            acceptingGstates.push(fromState.toString());
         }
         for (let fromPort = 0; fromPort < ports.length; fromPort++) {
             level = gstateToLevel[fromState].clone();
@@ -101,7 +104,7 @@ function gadgetifyLevel(levelIndex) {
                         gstateToLevel.push(level.clone());
                     }
                     const toState = gstateFromLevelString[newGstateStr];
-                    transitions[fromState].push([fromPort, toPort, toState]);
+                    transitions[fromState].push([fromPort, toPort, toState.toString()]);
                     console.log([fromState, fromPort, toPort, toState]);
                 }
                 for (let action = -1; action <= 5; action++) {
@@ -122,7 +125,7 @@ function gadgetifyLevel(levelIndex) {
         name: `Level ${levelIndex + 1}`,
         type: "Transitions",
         locations: [...ports.keys()],
-        states: [...gstateToLevel.keys()],
+        states: [...gstateToLevel.keys()].map(s => s.toString()),
         acceptingStates: acceptingGstates,
         transitions: transitions,
     }
