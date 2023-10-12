@@ -7,7 +7,7 @@ function noWhiteSpace(strings, ...placeholders) {
 }
 
 class Gadget {
-  constructor(name, locations, states, transitions, acceptingPred, psState, psPorts, psLevels) {
+  constructor(name, locations, states, transitions, acceptingPred, psState, psLevelIndex, psPorts, psLevels) {
     this.name = name;
     this.states = [...new Set(states)];
     this.locations = [...new Set(locations)];
@@ -19,8 +19,9 @@ class Gadget {
     this.acceptingPred = acceptingPred === undefined ? s => true :
                          acceptingPred instanceof Function ? acceptingPred :
                          s => acceptingPred.includes(s);
-    this.psState = psState;
 
+    this.psState = psState;
+    this.psLevelIndex = psLevelIndex;
     this.psPorts = psPorts || (() => undefined);
     this.psLevels = psLevels || (() => undefined);
   }
@@ -30,7 +31,7 @@ class Gadget {
       newName,
       this.locations, this.states, this.transitions,
       this.acceptingPred,
-      this.psState, this.psPorts, this.psLevels
+      this.psState, this.psLevelIndex, this.psPorts, this.psLevels
     );
   }
 
@@ -47,7 +48,7 @@ class Gadget {
       this.states.filter(fnState),
       this.transitions.filter(fnTrans2),
       this.acceptingPred,
-      this.psState, this.psPorts, this.psLevels
+      this.psState, this.psLevelIndex, this.psPorts, this.psLevels
     );
   }
 
@@ -79,6 +80,7 @@ class Gadget {
       this.transitions.map(fnTrans),
       this.acceptingPred,
       this.psState,
+      this.psLevelIndex,
       l => this.psPorts(this.locations.find(l2 => fnLoc(l2) == l)),
       s => this.psLevels(this.states.find(s2 => fnState(s2) == s))
     );

@@ -122,6 +122,7 @@ function gadgetifyLevel(levelIndex) {
         transitions,
         acceptingGstates,
         state,
+        levelIndex,
         l => ports[l],
         s => gstateToLevel[s].clone(),
     );
@@ -185,16 +186,16 @@ function convertLevelToString_fixed() {
 
 function showGadgetState(gadget, state) {
     console.log(`Loading state ${state} of gadget "${gadget.name}"`, true);
-    setGameState(gadget.psState, ['rebuild']);
+    setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
     const psLevel = gadget.psLevels(state)
     if (psLevel) {
         level = psLevel;
+        RebuildLevelArrays();
+        calculateRowColMasks();
     } else {
         console.log(`Gadget "${gadget.name}" doesn't have any data associated with state ${state} :(`, true);
         return;
     }
-    RebuildLevelArrays();
-    calculateRowColMasks();
     redraw();
 }
 
