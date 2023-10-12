@@ -145,7 +145,11 @@ function removeLoops(gadget) {
 
 function mergeStates(gadget) {
   // dominates[s][t] means that you'll always prefer being in state s over state t
-  const dominates = Object.fromEntries(gadget.states.map(s => [s, Object.fromEntries(gadget.states.map(t => [t, true]))]));
+  const dominates = Object.fromEntries(gadget.states.map(s =>
+    [s, Object.fromEntries(gadget.states.map(t => 
+      [t, gadget.acceptingStates.includes(s) || !gadget.acceptingStates.includes(t)]
+    ))]
+  ));
   let progress;
   do {
     progress = false;
@@ -173,7 +177,7 @@ function mergeStates(gadget) {
     type: "Transitions",
     locations: gadget.locations,
     states: gadget.states,
-    acceptingStates: gadget.states,
+    acceptingStates: gadget.acceptingStates,
     transitions: filterTransitions(gadget.transitions,
       ([fromState, fromLoc, toLoc, toState]) =>
         !performTransition(gadget, fromState, fromLoc, toLoc).some(toState2 =>
