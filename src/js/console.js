@@ -79,7 +79,7 @@ function addToConsole(text) {
 }
 
 function consoleCacheDump() {
-	if (cache_console_messages===false) {
+	if (cache_console_messages===false || consolecache.length === 0) {
 		return;
 	}
 	

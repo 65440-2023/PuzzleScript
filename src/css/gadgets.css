@@ -1,0 +1,15 @@
+
+
+.gadgetJson .name {
+  color: lightblue;
+}
+
+.gadgetJson .state {
+  color: orange;
+  cursor: pointer;
+}
+
+.gadgetJson .transition {
+  color: pink;
+  cursor: pointer;
+}

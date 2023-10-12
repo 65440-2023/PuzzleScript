@@ -1,7 +1,6 @@
 function gadgetifyClick() {
-    cache_console_messages = true;
-    savedStates = {};
     compile("restart");
+    cache_console_messages = false;
 
     if (!canGadgetify()) {
         consolePrint("Can't run Gadgetify with this ruleset.")
@@ -11,10 +10,9 @@ function gadgetifyClick() {
             if (state.levels[i].message === undefined) {
                 consolePrint(`Processing level ${i + 1}.`);
                 const gadget = gadgetifyLevel(i);
-                const simplified = simplifyGadget(gadget, '0');
-                const relabeled = relabelStates(simplified);
-                printGadget(simplified);
-                printGadget(relabeled);
+                gadget.print();
+                const simplified = gadget.simplify(0);
+                simplified.print();
             }
         }
     }
@@ -68,28 +66,26 @@ function gadgetifyLevel(levelIndex) {
     removePlayers();
 
     const ports = findPorts();
-    const transitions = {};
+    const transitions = [];
     const gstateToLevel = [level.clone()];
     const acceptingGstates = []
-    const gstateFromLevelString = {};
-    gstateFromLevelString[convertLevelToString_fixed()] = 0;
+    const gstateFromLevelString = new Map();
+    gstateFromLevelString.set(convertLevelToString_fixed(), 0);
     const queue = [0];
     while (queue.length > 0) {
         const fromState = queue.shift();
-        transitions[fromState] = []
-
         level = gstateToLevel[fromState].clone();
         RebuildLevelArrays();
         if (winConditionsSatisfied()) {
-            acceptingGstates.push(fromState.toString());
+            acceptingGstates.push(fromState);
         }
         for (let fromPort = 0; fromPort < ports.length; fromPort++) {
             level = gstateToLevel[fromState].clone();
             RebuildLevelArrays();
             placePlayer(ports[fromPort]);
             const queue2 = [level.clone()];
-            const substates = {};
-            substates[convertLevelToString_fixed()] = queue2[0];
+            const substates = new Map();
+            substates.set(convertLevelToString_fixed(), queue2[0]);
             while (queue2.length > 0) {
                 const substate = queue2.shift();
                 level = substate.clone();
@@ -98,46 +94,37 @@ function gadgetifyLevel(levelIndex) {
                 if (toPort != -1) {
                     removePlayers();
                     const newGstateStr = convertLevelToString_fixed();
-                    if (!gstateFromLevelString.hasOwnProperty(newGstateStr)) {
-                        gstateFromLevelString[newGstateStr] = gstateToLevel.length;
+                    if (!gstateFromLevelString.has(newGstateStr)) {
+                        gstateFromLevelString.set(newGstateStr, gstateToLevel.length);
                         queue.push(gstateToLevel.length);
                         gstateToLevel.push(level.clone());
                     }
-                    const toState = gstateFromLevelString[newGstateStr];
-                    transitions[fromState].push([fromPort, toPort, toState.toString()]);
-                    console.log([fromState, fromPort, toPort, toState]);
+                    const toState = gstateFromLevelString.get(newGstateStr);
+                    transitions.push([fromState, fromPort, toPort, toState]);
                 }
                 for (let action = -1; action <= 5; action++) {
                     level = substate.clone();
                     RebuildLevelArrays();
                     processInput(action, true);
                     const newSubstateStr = convertLevelToString_fixed();
-                    if (!substates.hasOwnProperty(newSubstateStr)) {
-                        substates[newSubstateStr] = level.clone();
-                        queue2.push(substates[newSubstateStr]);
+                    if (!substates.has(newSubstateStr)) {
+                        substates.set(newSubstateStr, level.clone());
+                        queue2.push(substates.get(newSubstateStr));
                     }
                 }
             }
         }
     }
-    savedStates[levelIndex] = gstateToLevel;
-    return {
-        name: `Level ${levelIndex + 1}`,
-        type: "Transitions",
-        locations: [...ports.keys()],
-        states: [...gstateToLevel.keys()].map(s => s.toString()),
-        acceptingStates: acceptingGstates,
-        transitions: transitions,
-    }
-}
-
-var savedStates = {};
-function showSavedState(levelIndex, gstate) {
-    setGameState(state, ['loadLevel', levelIndex]);
-    level = savedStates[levelIndex][gstate].clone();
-    RebuildLevelArrays();
-    calculateRowColMasks();
-    redraw();
+    return new Gadget(
+        `Level ${levelIndex + 1}`,
+        [...ports.keys()],
+        [...gstateToLevel.keys()],
+        transitions,
+        acceptingGstates,
+        state,
+        l => ports[l],
+        s => gstateToLevel[s].clone(),
+    );
 }
 
 function findPorts() {
@@ -194,4 +181,37 @@ function convertLevelToString_fixed() {
         out += '\n';
     }
     return out;
+}
+
+function showGadgetState(gadget, state) {
+    console.log(`Loading state ${state} of gadget "${gadget.name}"`, true);
+    setGameState(gadget.psState, ['rebuild']);
+    const psLevel = gadget.psLevels(state)
+    if (psLevel) {
+        level = psLevel;
+    } else {
+        console.log(`Gadget "${gadget.name}" doesn't have any data associated with state ${state} :(`, true);
+        return;
+    }
+    RebuildLevelArrays();
+    calculateRowColMasks();
+    redraw();
+}
+
+function showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState) {
+    showGadgetState(gadget, fromState);
+    if (!gadget.psPorts(fromLoc)) {
+        console.log(`Gadget "${gadget.name}" doesn't have any data associated with location ${fromLoc} :(`, true);
+        return;
+    }
+    if (!gadget.psPorts(toLoc)) {
+        console.log(`Gadget "${gadget.name}" doesn't have any data associated with location ${toLoc} :(`, true);
+        return;
+    }
+    if (!gadget.psLevels(toState)) {
+        console.log(`Gadget "${gadget.name}" doesn't have any data associated with state ${state} :(`, true);
+        return;
+    }
+    placePlayer(gadget.psPorts(fromLoc));
+    redraw();
 }
