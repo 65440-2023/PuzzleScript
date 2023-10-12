@@ -50,7 +50,7 @@ function formatGadget(gadget, loops=false) {
   }
   const transitionsStr = Object.getOwnPropertyNames(gadget.transitions).map(fromLoc =>
     `\n    ${JSON.stringify(fromLoc)}: ${JSON.stringify(gadget.transitions[fromLoc])}`
-  );
+  ).join(',');
   const str =
 `{
   "name": ${JSON.stringify(gadget.name)},
