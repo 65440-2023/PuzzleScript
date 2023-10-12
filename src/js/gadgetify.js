@@ -1,5 +1,6 @@
 function gadgetifyClick() {
     cache_console_messages = true;
+    savedStates = {};
     compile("restart");
 
     if (!canGadgetify()) {
@@ -9,7 +10,7 @@ function gadgetifyClick() {
         for (let i = 0; i < state.levels.length; i++) {
             if (state.levels[i].message === undefined) {
                 consolePrint(`Processing level ${i}.`);
-                gadget = gadgetifyLevel(i);
+                const gadget = gadgetifyLevel(i);
                 consolePrint(JSON.stringify(gadget));
             }
         }
@@ -116,14 +117,24 @@ function gadgetifyLevel(levelIndex) {
             }
         }
     }
+    savedStates[levelIndex] = gstateToLevel;
     return {
-        name: `level ${levelIndex}`,
+        name: `Level ${levelIndex + 1}`,
         type: "Transitions",
         locations: [...ports.keys()],
         states: [...gstateToLevel.keys()],
         acceptingStates: acceptingGstates,
         transitions: transitions,
     }
+}
+
+var savedStates = {};
+function showSavedState(levelIndex, gstate) {
+    setGameState(state, ['loadLevel', levelIndex]);
+    level = savedStates[levelIndex][gstate].clone();
+    RebuildLevelArrays();
+    calculateRowColMasks();
+    redraw();
 }
 
 function findPorts() {
