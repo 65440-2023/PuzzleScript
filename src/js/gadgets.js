@@ -78,11 +78,11 @@ class Gadget {
       this.locations.map(fnLoc),
       this.states.map(fnState),
       this.transitions.map(fnTrans),
-      this.acceptingPred,
+      s => this.states.some(s2 => fnLoc(s2) === s && this.acceptingPred(s2)),
       this.psState,
       this.psLevelIndex,
-      l => this.psPorts(this.locations.find(l2 => fnLoc(l2) == l)),
-      s => this.psLevels(this.states.find(s2 => fnState(s2) == s))
+      l => this.psPorts(this.locations.find(l2 => fnLoc(l2) === l)),
+      s => this.psLevels(this.states.find(s2 => fnState(s2) === s))
     );
   }
 
@@ -229,7 +229,9 @@ class Gadget {
   }
 
   removeUnreachable(startState) {
-    if (startState === undefined) return this;
+    if (startState === undefined) {
+      startState = this.states[0];
+    }
     const reachable = new Set([startState]);
 
     let progress;
@@ -275,46 +277,40 @@ class Gadget {
                .minimizeStateLabels()
                .rename(this.name + ' (simplified)');
   }
-}
 
-// function determinize(gadget, startState) {
-//   if (gadget.type !== 'Transitions') {
-//     throw new Exception('Only Transitions type is supported')
-//   }
-//   if (startState === undefined) {
-//     startState = gadget.states[0];
-//   }
-//
-//   const states = [];
-//   const transitions = {};
-//   const queue = [[startState]];
-//
-//   while (queue.length > 0) {
-//     const state = queue.shift();
-//     const stateStr = JSON.stringify(state);
-//     if (transitions.hasOwnProperty(stateStr)) continue;
-//     states.push(stateStr);
-//     transitions[stateStr] = [];
-//     for (const fromLoc of gadget.locations) {
-//       for (const toLoc of gadget.locations) {
-//         const toStates = [...new Set(
-//           state.flatMap(substate => performTransition(gadget, substate, fromLoc, toLoc))
-//         )];
-//         toStates.sort()
-//         if (toStates.length > 0) {
-//           queue.push(toStates);
-//           transitions[stateStr].push([fromLoc, toLoc, JSON.stringify(toStates)]);
-//         }
-//       }
-//     }
-//   }
-//
-//   return {
-//     name: gadget.name + " (determinized)",
-//     type: "Transitions",
-//     locations: gadget.locations,
-//     states: states,
-//     acceptingStates: states.filter(state => JSON.parse(state).some(substate => gadget.acceptingStates.includes(substate))),
-//     transitions: transitions,
-//   };
-// }
+  determinize(startState) {
+    if (startState === undefined) {
+      startState = this.states[0];
+    }
+  
+    const states = new Set();
+    const transitions = [];
+    const queue = [[startState]];
+  
+    while (queue.length > 0) {
+      const state = queue.shift();
+      const stateStr = JSON.stringify(state);
+      if (states.has(stateStr)) continue;
+      states.add(stateStr);
+      for (const fromLoc of this.locations) {
+        for (const toLoc of this.locations) {
+          const toStates = [...new Set(
+            state.flatMap(substate => this.performTransition(substate, fromLoc, toLoc))
+          )];
+          toStates.sort()
+          if (toStates.length > 0) {
+            queue.push(toStates);
+            transitions.push([stateStr, fromLoc, toLoc, JSON.stringify(toStates)]);
+          }
+        }
+      }
+    }
+  
+    return new Gadget(
+      this.name + " (determinized)",
+      this.locations, states, transitions,
+      state => JSON.parse(state).some(substate => this.acceptingPred(substate)),
+      this.psState, this.psLevelIndex, this.psPorts, null // can't get psLevels :(
+    );
+  }
+}

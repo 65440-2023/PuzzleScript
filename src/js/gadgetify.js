@@ -10,9 +10,9 @@ function gadgetifyClick() {
             if (state.levels[i].message === undefined) {
                 consolePrint(`Processing level ${i + 1}.`);
                 const gadget = gadgetifyLevel(i);
-                gadget.print();
-                const simplified = gadget.simplify(0);
-                simplified.print();
+                // gadget.print();
+                gadget.simplify().print();
+                gadget.determinize().simplify().print();
             }
         }
     }
