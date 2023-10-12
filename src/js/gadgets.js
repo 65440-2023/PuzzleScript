@@ -130,25 +130,27 @@ class Gadget {
   formatAsJsonHtml() {
     const escape = s => encodeURIComponent(JSON.stringify(s));
 
-    const formatState = state => `<span class="gadgetState" state="${escape(state)}">${JSON.stringify(state)}</span>`;
-    const formatTransition = ([fromState, fromLoc, toLoc, toState]) => 
-      noWhiteSpace`<span class="gadgetTransition"
+    const formatLocation = loc => `<span class="gadgetLocation" location="${escape(loc)}">${JSON.stringify(loc)}</span>`;
+    const formatState = state => `<span class="gadgetState" state="${escape(state)}">${JSON.stringify(state.toString())}</span>`;
+    const formatStateLocation = (state, loc) => `<span class="gadgetState gadgetLocation" state="${escape(state)}" location="${escape(loc)}">${JSON.stringify(loc)}</span>`;
+
+    const formatTransition = ([fromState, fromLoc, toLoc, toState]) => {
+      return noWhiteSpace`<span class="gadgetTransition"
         fromState="${escape(fromState)}" fromLoc="${escape(fromLoc)}"
         toLoc="${escape(toLoc)}" toState="${escape(toState)}"
-        >${JSON.stringify([fromLoc, toLoc, toState])}</span>`;
-    const formatStateArray = states => states.map(formatState).join(',');
-    const formatTransitionArray = transitions => transitions.map(formatTransition).join(',');
+        >[${formatStateLocation(fromState, fromLoc)}, ${formatStateLocation(toState, toLoc)}, ${formatState(toState)}]</span>`;
+    };
 
     const transitionsStr = this.states.map(fromState =>
-      `\n    ${formatState(fromState)}: [${formatTransitionArray(this.transitions.filter(t => t[0] == fromState))}]`
+      `\n    ${formatState(fromState)}: [${this.transitions.filter(t => t[0] == fromState).map(formatTransition).join(', ')}]`
     ).join(',');
     const str =
 `{
   "name": <span class="gadgetName">${JSON.stringify(this.name)}</span>,
   "type": "Transitions",
-  "locations": ${JSON.stringify(this.locations)},
-  "states": [${formatStateArray(this.states)}],
-  "acceptingStates": [${formatStateArray(this.states.filter(this.acceptingPred))}],
+  "locations": [${this.locations.map(formatLocation).join(', ')}],
+  "states": [${this.states.map(formatState).join(', ')}],
+  "acceptingStates": [${this.states.filter(this.acceptingPred).map(formatState).join(', ')}],
   "transitions": {${transitionsStr}
   }
 }`
@@ -164,37 +166,48 @@ class Gadget {
     consolePrint(gadget.formatAsJsonHtml(), true);
 
     const stateElems = cache.getElementsByClassName('gadgetState');
-    const transitionElems = cache.getElementsByClassName('gadgetTransition');
-    for (const state of this.states) {
-      if (this.psLevels(state) != undefined) {
-        for (const e of stateElems) {
-          if (e.getAttribute('state') === escape(state)) {
-            e.classList.add('clickable');
-            e.addEventListener('click', () => {
-              showGadgetState(gadget, state);
-            });
-          }
+    const locationElems = cache.getElementsByClassName('gadgetLocation');
+    // const stateLocationElems = cache.getElementsByClassName('gadgetLocation');
+
+    for (const state of this.states.filter(s => this.psLevels(s))) {
+      for (const e of stateElems) {
+        if (e.getAttribute('state') === escape(state)) {
+          e.classList.add('clickable');
+          e.addEventListener('click', () => {
+            showGadgetState(gadget, state);
+          });
         }
       }
     }
-    for (const [fromState, fromLoc, toLoc, toState] of this.transitions) {
-      if (this.psLevels(fromState) != undefined && this.psPorts(fromLoc) != undefined
-        // && this.psPorts(toLoc) != undefined && this.psLevels(toState) != undefined
-      ) {
-        for (const e of transitionElems) {
-          if (e.getAttribute('fromState') === escape(fromState)
-            && e.getAttribute('fromLoc') === escape(fromLoc)
-            && e.getAttribute('toLoc') === escape(toLoc)
-            && e.getAttribute('toState') === escape(toState)
-          ) {
-            e.classList.add('clickable');
-            e.addEventListener('click', () => {
-              showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState);
-            });
-          }
+    for (const location of this.locations.filter(l => this.psPorts(l))) {
+      for (const e of locationElems) {
+        if (e.getAttribute('location') === escape(location)) {
+          e.classList.add('clickable');
+          e.addEventListener('click', () => {
+            showGadgetLocation(gadget, location);
+          });
         }
       }
     }
+    // const transitionElems = cache.getElementsByClassName('gadgetTransition');
+    // for (const [fromState, fromLoc, toLoc, toState] of this.transitions) {
+    //   if (this.psLevels(fromState) != undefined && this.psPorts(fromLoc) != undefined
+    //     && this.psPorts(toLoc) != undefined && this.psLevels(toState) != undefined
+    //   ) {
+    //     for (const e of transitionElems) {
+    //       if (e.getAttribute('fromState') === escape(fromState)
+    //         && e.getAttribute('fromLoc') === escape(fromLoc)
+    //         && e.getAttribute('toLoc') === escape(toLoc)
+    //         && e.getAttribute('toState') === escape(toState)
+    //       ) {
+    //         e.classList.add('clickable');
+    //         e.addEventListener('click', () => {
+    //           showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState);
+    //         });
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   mergeStates() {

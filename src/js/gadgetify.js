@@ -184,17 +184,30 @@ function convertLevelToString_fixed() {
     return out;
 }
 
-function showGadgetState(gadget, state) {
-    console.log(`Loading state ${state} of gadget "${gadget.name}"`, true);
-    setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
-    level = gadget.psLevels(state);
+function showGadgetState(gadget, gstate) {
+    if (state !== gadget.psState || curlevel !== gadget.psLevelIndex) {
+        console.log(`Loading level ${gadget.psLevelIndex + 1}`);
+        setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
+    }
+    console.log(`Loading state ${gstate} of gadget "${gadget.name}"`);
+    level = gadget.psLevels(gstate);
     RebuildLevelArrays();
     calculateRowColMasks();
     redraw();
 }
 
-function showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState) {
-    showGadgetState(gadget, fromState);
-    placePlayer(gadget.psPorts(fromLoc));
+function showGadgetLocation(gadget, glocation) {
+    if (state !== gadget.psState || curlevel !== gadget.psLevelIndex) {
+        console.log(`Loading level ${gadget.psLevelIndex + 1}`);
+        setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
+    }
+    console.log(`Teleporting player to location ${glocation} of gadget "${gadget.name}"`);
+    removePlayers();
+    placePlayer(gadget.psPorts(glocation));
     redraw();
 }
+
+// function showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState) {
+//     showGadgetState(gadget, fromState);
+//     showGadgetLocation(gadget, fromLoc);
+// }

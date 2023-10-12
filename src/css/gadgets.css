@@ -1,11 +1,17 @@
-
+.gadgetJson {
+  font-size: 0.9rem;
+}
 
 .gadgetName {
   color: lightblue;
 }
 
-.gadgetState {
+.gadgetLocation, .gadgetState.gadgetLocation {
   color: orange;
+}
+
+.gadgetState {
+  color: aquamarine;
 }
 
 .gadgetTransition {
@@ -14,5 +20,6 @@
 
 .gadgetJson .clickable {
   cursor: pointer;
-  text-decoration: underline;
+  /* text-decoration: underline dotted; */
+  font-weight: bold;
 }
