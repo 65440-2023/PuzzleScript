@@ -9,9 +9,13 @@ function noWhiteSpace(strings, ...placeholders) {
 class Gadget {
   constructor(name, locations, states, transitions, acceptingPred, psState, psPorts, psLevels) {
     this.name = name;
-    this.states = states;
-    this.locations = locations;
-    this.transitions = transitions;
+    this.states = [...new Set(states)];
+    this.locations = [...new Set(locations)];
+    this.transitions = transitions.filter(([fromState, fromLoc, toLoc, toState], i) =>
+      i === transitions.findIndex(([fromState2, fromLoc2, toLoc2, toState2]) =>
+        fromState2 === fromState && fromLoc2 === fromLoc && toLoc2 === toLoc && toState2 === toState
+      )
+    );
     this.acceptingPred = acceptingPred === undefined ? s => true :
                          acceptingPred instanceof Function ? acceptingPred :
                          s => acceptingPred.includes(s);
@@ -209,9 +213,14 @@ class Gadget {
       }
     } while(progress);
   
-    return this.filterTransitions((fromState, fromLoc, toLoc, toState) =>
+    // if two states dominate each other, we can replace one with another everywhere
+    const gadget = this.mapStates(
+      s => this.states.find(s2 => dominates.get(s).get(s2) && dominates.get(s2).get(s))
+    )
+    // if a traversal leads to two states, and one dominates the other, we can delete the other transition
+    return gadget.filterTransitions((fromState, fromLoc, toLoc, toState) =>
       !(fromLoc === toLoc && fromState !== toState && dominates.get(fromState).get(toState)) &&
-      !this.performTransition(fromState, fromLoc, toLoc).some(toState2 =>
+      !gadget.performTransition(fromState, fromLoc, toLoc).some(toState2 =>
         toState2 != toState && dominates.get(toState2).get(toState)
       )
     );
