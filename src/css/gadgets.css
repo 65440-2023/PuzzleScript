@@ -1,15 +1,18 @@
 
 
-.gadgetJson .name {
+.gadgetName {
   color: lightblue;
 }
 
-.gadgetJson .state {
+.gadgetState {
   color: orange;
-  cursor: pointer;
 }
 
-.gadgetJson .transition {
+.gadgetTransition {
   color: pink;
+}
+
+.gadgetJson .clickable {
   cursor: pointer;
+  text-decoration: underline;
 }

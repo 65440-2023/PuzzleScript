@@ -16,7 +16,7 @@ class Gadget {
         fromState2 === fromState && fromLoc2 === fromLoc && toLoc2 === toLoc && toState2 === toState
       )
     );
-    this.acceptingPred = acceptingPred === undefined ? s => true :
+    this.acceptingPred = acceptingPred == undefined ? s => true :
                          acceptingPred instanceof Function ? acceptingPred :
                          s => acceptingPred.includes(s);
 
@@ -130,9 +130,9 @@ class Gadget {
   formatAsJsonHtml() {
     const escape = s => encodeURIComponent(JSON.stringify(s));
 
-    const formatState = state => `<span class="state" state="${escape(state)}">${JSON.stringify(state)}</span>`;
+    const formatState = state => `<span class="gadgetState" state="${escape(state)}">${JSON.stringify(state)}</span>`;
     const formatTransition = ([fromState, fromLoc, toLoc, toState]) => 
-      noWhiteSpace`<span class="transition"
+      noWhiteSpace`<span class="gadgetTransition"
         fromState="${escape(fromState)}" fromLoc="${escape(fromLoc)}"
         toLoc="${escape(toLoc)}" toState="${escape(toState)}"
         >${JSON.stringify([fromLoc, toLoc, toState])}</span>`;
@@ -144,7 +144,7 @@ class Gadget {
     ).join(',');
     const str =
 `{
-  "name": <span class="name">${JSON.stringify(this.name)}</span>,
+  "name": <span class="gadgetName">${JSON.stringify(this.name)}</span>,
   "type": "Transitions",
   "locations": ${JSON.stringify(this.locations)},
   "states": [${formatStateArray(this.states)}],
@@ -163,26 +163,35 @@ class Gadget {
     console.log(gadget.toJSON());
     consolePrint(gadget.formatAsJsonHtml(), true);
 
-    const stateElems = cache.getElementsByClassName('state');
-    const transitionElems = cache.getElementsByClassName('transition');
+    const stateElems = cache.getElementsByClassName('gadgetState');
+    const transitionElems = cache.getElementsByClassName('gadgetTransition');
     for (const state of this.states) {
-      for (const e of stateElems) {
-        if (e.getAttribute('state') === escape(state)) {
-          e.addEventListener('click', () => {
-            showGadgetState(gadget, state);
-          });
+      if (this.psLevels(state) != undefined) {
+        for (const e of stateElems) {
+          if (e.getAttribute('state') === escape(state)) {
+            e.classList.add('clickable');
+            e.addEventListener('click', () => {
+              showGadgetState(gadget, state);
+            });
+          }
         }
       }
     }
     for (const [fromState, fromLoc, toLoc, toState] of this.transitions) {
-      for (const e of transitionElems) {
-        if (e.getAttribute('fromState') === escape(fromState)
-          && e.getAttribute('fromLoc') === escape(fromLoc)
-          && e.getAttribute('toLoc') === escape(toLoc)
-          && e.getAttribute('toState') === escape(toState)) {
-          e.addEventListener('click', () => {
-            showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState);
-          });
+      if (this.psLevels(fromState) != undefined && this.psPorts(fromLoc) != undefined
+        // && this.psPorts(toLoc) != undefined && this.psLevels(toState) != undefined
+      ) {
+        for (const e of transitionElems) {
+          if (e.getAttribute('fromState') === escape(fromState)
+            && e.getAttribute('fromLoc') === escape(fromLoc)
+            && e.getAttribute('toLoc') === escape(toLoc)
+            && e.getAttribute('toState') === escape(toState)
+          ) {
+            e.classList.add('clickable');
+            e.addEventListener('click', () => {
+              showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState);
+            });
+          }
         }
       }
     }
@@ -229,7 +238,7 @@ class Gadget {
   }
 
   removeUnreachable(startState) {
-    if (startState === undefined) {
+    if (startState == undefined) {
       startState = this.states[0];
     }
     const reachable = new Set([startState]);
@@ -279,7 +288,7 @@ class Gadget {
   }
 
   determinize(startState) {
-    if (startState === undefined) {
+    if (startState == undefined) {
       startState = this.states[0];
     }
   
@@ -310,7 +319,8 @@ class Gadget {
       this.name + " (determinized)",
       this.locations, states, transitions,
       state => JSON.parse(state).some(substate => this.acceptingPred(substate)),
-      this.psState, this.psLevelIndex, this.psPorts, null // can't get psLevels :(
+      this.psState, this.psLevelIndex, this.psPorts,
+      state => JSON.parse(state).length === 1 ? this.psLevels(JSON.parse(state)[0]) : null // can't get psLevels unless singleton :(
     );
   }
 }

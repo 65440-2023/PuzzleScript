@@ -187,32 +187,14 @@ function convertLevelToString_fixed() {
 function showGadgetState(gadget, state) {
     console.log(`Loading state ${state} of gadget "${gadget.name}"`, true);
     setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
-    const psLevel = gadget.psLevels(state)
-    if (psLevel) {
-        level = psLevel;
-        RebuildLevelArrays();
-        calculateRowColMasks();
-    } else {
-        console.log(`Gadget "${gadget.name}" doesn't have any data associated with state ${state} :(`, true);
-        return;
-    }
+    level = gadget.psLevels(state);
+    RebuildLevelArrays();
+    calculateRowColMasks();
     redraw();
 }
 
 function showGadgetTransition(gadget, fromState, fromLoc, toLoc, toState) {
     showGadgetState(gadget, fromState);
-    if (!gadget.psPorts(fromLoc)) {
-        console.log(`Gadget "${gadget.name}" doesn't have any data associated with location ${fromLoc} :(`, true);
-        return;
-    }
-    if (!gadget.psPorts(toLoc)) {
-        console.log(`Gadget "${gadget.name}" doesn't have any data associated with location ${toLoc} :(`, true);
-        return;
-    }
-    if (!gadget.psLevels(toState)) {
-        console.log(`Gadget "${gadget.name}" doesn't have any data associated with state ${state} :(`, true);
-        return;
-    }
     placePlayer(gadget.psPorts(fromLoc));
     redraw();
 }
