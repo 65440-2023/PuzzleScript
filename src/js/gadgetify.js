@@ -11,8 +11,13 @@ function gadgetifyClick() {
                 consolePrint(`Processing level ${i + 1}.`);
                 const gadget = gadgetifyLevel(i);
                 // gadget.print();
-                gadget.simplify().print();
-                gadget.determinize().simplify().print();
+                const simplified = gadget.simplify();
+                simplified.print();
+                const determinized = gadget.determinize().simplify();
+                if (determinized.transitions.length != simplified.transitions.length ||
+                        determinized.states.length != simplified.states.length) {
+                    determinized.print();
+                }
             }
         }
     }
