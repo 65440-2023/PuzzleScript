@@ -296,8 +296,7 @@ class Gadget {
     return this.mergeStates()
                .removeUnreachable(startState)
                .removeUnwinnable()
-               .minimizeStateLabels()
-               .rename(this.name + ' (simplified)');
+               .minimizeStateLabels();
   }
 
   determinize(startState) {
