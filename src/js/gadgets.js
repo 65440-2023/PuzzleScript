@@ -78,7 +78,7 @@ class Gadget {
       this.locations.map(fnLoc),
       this.states.map(fnState),
       this.transitions.map(fnTrans),
-      s => this.states.some(s2 => fnLoc(s2) === s && this.acceptingPred(s2)),
+      s => this.states.some(s2 => fnState(s2) === s && this.acceptingPred(s2)),
       this.psState,
       this.psLevelIndex,
       l => this.psPorts(this.locations.find(l2 => fnLoc(l2) === l)),
