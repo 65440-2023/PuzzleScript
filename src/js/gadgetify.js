@@ -76,29 +76,26 @@ function gadgetifyLevel(levelIndex) {
 
     const ports = findPorts();
     const transitions = [];
-    const gstateToLevel = [level.clone()];
+    const gstateToLevel = [backupLevel()];
     const acceptingGstates = []
     const gstateFromLevelString = new Map();
     gstateFromLevelString.set(serializeLevel(), 0);
     const queue = [0];
     while (queue.length > 0) {
         const fromState = queue.shift();
-        level = gstateToLevel[fromState].clone();
-        RebuildLevelArrays();
+        restoreLevel(gstateToLevel[fromState]);
         if (winConditionsSatisfied()) {
             acceptingGstates.push(fromState);
         }
         for (let fromPort = 0; fromPort < ports.length; fromPort++) {
-            level = gstateToLevel[fromState].clone();
-            RebuildLevelArrays();
+            restoreLevel(gstateToLevel[fromState]);
             placePlayer(ports[fromPort]);
-            const queue2 = [level.clone()];
+            const queue2 = [backupLevel()];
             const substates = new Map();
             substates.set(serializeLevel(), queue2[0]);
             while (queue2.length > 0) {
                 const substate = queue2.shift();
-                level = substate.clone();
-                RebuildLevelArrays();
+                restoreLevel(substate);
                 const toPort = ports.indexOf(getPlayerPositions()[0]);
                 if (toPort != -1) {
                     removePlayers();
@@ -106,18 +103,17 @@ function gadgetifyLevel(levelIndex) {
                     if (!gstateFromLevelString.has(newGstateStr)) {
                         gstateFromLevelString.set(newGstateStr, gstateToLevel.length);
                         queue.push(gstateToLevel.length);
-                        gstateToLevel.push(level.clone());
+                        gstateToLevel.push(backupLevel());
                     }
                     const toState = gstateFromLevelString.get(newGstateStr);
                     transitions.push([fromState, fromPort, toPort, toState]);
                 }
                 for (let action = -1; action <= 5; action++) {
-                    level = substate.clone();
-                    RebuildLevelArrays();
+                    restoreLevel(substate);
                     processInput(action, true);
                     const newSubstateStr = serializeLevel();
                     if (!substates.has(newSubstateStr)) {
-                        substates.set(newSubstateStr, level.clone());
+                        substates.set(newSubstateStr, backupLevel());
                         queue2.push(substates.get(newSubstateStr));
                     }
                 }
@@ -133,7 +129,7 @@ function gadgetifyLevel(levelIndex) {
         state,
         levelIndex,
         l => ports[l],
-        s => gstateToLevel[s].clone(),
+        s => gstateToLevel[s],
     );
 }
 
@@ -170,8 +166,7 @@ function showGadgetState(gadget, gstate) {
         setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
     }
     console.log(`Loading state ${gstate} of gadget "${gadget.name}"`);
-    level = gadget.psLevels(gstate);
-    RebuildLevelArrays();
+    level = restoreLevel(gstate);
     calculateRowColMasks();
     redraw();
 }
