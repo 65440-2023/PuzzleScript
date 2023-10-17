@@ -108,9 +108,9 @@ function gadgetifyLevel(levelIndex) {
                     const toState = gstateFromLevelString.get(newGstateStr);
                     transitions.push([fromState, fromPort, toPort, toState]);
                 }
-                for (let action = -1; action <= 5; action++) {
+                for (let action = -1; action <= 4; action++) {
                     restoreLevel(substate);
-                    processInput(action, true);
+                    if (!processInput(action, true)) continue;
                     const newSubstateStr = serializeLevel();
                     if (!substates.has(newSubstateStr)) {
                         substates.set(newSubstateStr, backupLevel());
