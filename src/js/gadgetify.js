@@ -67,6 +67,10 @@ function canGadgetify() {
 }
 
 function gadgetifyLevel(levelIndex) {
+    function serializeLevel() {
+        return level.objects.join();
+    }
+
     setGameState(state, ['loadLevel', levelIndex]);
     removePlayers();
 
@@ -75,7 +79,7 @@ function gadgetifyLevel(levelIndex) {
     const gstateToLevel = [level.clone()];
     const acceptingGstates = []
     const gstateFromLevelString = new Map();
-    gstateFromLevelString.set(convertLevelToString_fixed(), 0);
+    gstateFromLevelString.set(serializeLevel(), 0);
     const queue = [0];
     while (queue.length > 0) {
         const fromState = queue.shift();
@@ -90,7 +94,7 @@ function gadgetifyLevel(levelIndex) {
             placePlayer(ports[fromPort]);
             const queue2 = [level.clone()];
             const substates = new Map();
-            substates.set(convertLevelToString_fixed(), queue2[0]);
+            substates.set(serializeLevel(), queue2[0]);
             while (queue2.length > 0) {
                 const substate = queue2.shift();
                 level = substate.clone();
@@ -98,7 +102,7 @@ function gadgetifyLevel(levelIndex) {
                 const toPort = ports.indexOf(getPlayerPositions()[0]);
                 if (toPort != -1) {
                     removePlayers();
-                    const newGstateStr = convertLevelToString_fixed();
+                    const newGstateStr = serializeLevel();
                     if (!gstateFromLevelString.has(newGstateStr)) {
                         gstateFromLevelString.set(newGstateStr, gstateToLevel.length);
                         queue.push(gstateToLevel.length);
@@ -111,7 +115,7 @@ function gadgetifyLevel(levelIndex) {
                     level = substate.clone();
                     RebuildLevelArrays();
                     processInput(action, true);
-                    const newSubstateStr = convertLevelToString_fixed();
+                    const newSubstateStr = serializeLevel();
                     if (!substates.has(newSubstateStr)) {
                         substates.set(newSubstateStr, level.clone());
                         queue2.push(substates.get(newSubstateStr));
@@ -158,35 +162,6 @@ function placePlayer(pos) {
     cell.ior(state.playerMask);
     level.setCell(pos, cell);
     calculateRowColMasks();
-}
-
-// similar to convertLevelToString, but in the right order
-// i don't want to edit the original because every test relies on it
-function convertLevelToString_fixed() {
-    var out = '';
-    var seenCells = {};
-    var i = 0;
-    for (var y = 0; y < level.height; y++) {
-        for (var x = 0; x < level.width; x++) {
-            var bitmask = level.getCell(y + x * level.height);
-            var objs = [];
-            for (var bit = 0; bit < 32 * STRIDE_OBJ; ++bit) {
-                if (bitmask.get(bit)) {
-                    objs.push(state.idDict[bit])
-                }
-            }
-            objs.sort();
-            objs = objs.join(" ");
-            /* replace repeated object combinations with numbers */
-            if (!seenCells.hasOwnProperty(objs)) {
-                seenCells[objs] = i++;
-                out += objs + ":";
-            }
-            out += seenCells[objs] + ",";
-        }
-        out += '\n';
-    }
-    return out;
 }
 
 function showGadgetState(gadget, gstate) {
