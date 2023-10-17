@@ -12,11 +12,11 @@ function gadgetifyClick() {
                 const gadget = gadgetifyLevel(i);
                 // gadget.print();
                 const simplified = gadget.simplify();
-                simplified.print();
+                simplified.print().printLibraryMatch();
                 const determinized = gadget.determinize().simplify();
                 if (determinized.transitions.length != simplified.transitions.length ||
                         determinized.states.length != simplified.states.length) {
-                    determinized.print();
+                    determinized.print().printLibraryMatch();
                 }
             }
         }

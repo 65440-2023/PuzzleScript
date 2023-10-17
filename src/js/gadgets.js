@@ -6,6 +6,24 @@ function noWhiteSpace(strings, ...placeholders) {
   return withoutSpace;
 }
 
+// https://stackoverflow.com/a/20871714
+const permutations = (inputArr) => {
+  let result = [];
+  const permute = (arr, m = []) => {
+    if (arr.length === 0) {
+      result.push(m)
+    } else {
+      for (let i = 0; i < arr.length; i++) {
+        let curr = arr.slice();
+        let next = curr.splice(i, 1);
+        permute(curr.slice(), m.concat(next))
+      }
+    }
+  }
+  permute(inputArr)
+  return result;
+}
+
 class Gadget {
   constructor(name, locations, states, transitions, acceptingPred, psState, psLevelIndex, psPorts, psLevels) {
     this.name = name;
@@ -99,6 +117,15 @@ class Gadget {
     return this.mapStates(s => stateMap.get(s));
   }
 
+  symmetrize() {
+    return new Gadget(
+      this.name, this.locations, this.states,
+      this.transitions.concat(this.transitions.map(([fromState, fromLoc, toLoc, toState]) => [toState, toLoc, fromLoc, fromState])),
+      this.acceptingPred,
+      this.psState, this.psLevelIndex, this.psPorts, this.psLevels,
+    )
+  }
+
   transitionsByStartState() {
     const transitions = new Map();
     for (const state of this.states) {
@@ -123,7 +150,7 @@ class Gadget {
       locations: this.locations,
       states: this.states,
       acceptingStates: this.states.filter(this.acceptingPred),
-      transitions: JSON.stringify(Object.fromEntries(this.transitionsByStartState())),
+      transitions: Object.fromEntries(this.transitionsByStartState()),
     };
   }
 
@@ -158,7 +185,7 @@ class Gadget {
     return `<pre class="gadgetJson">${str}</pre>`;
   }
   
-  print(loops=false) {
+  print(loops=false, performLibrarySearch=false) {
     const escape = s => encodeURIComponent(JSON.stringify(s));
 
     const gadget = loops ? this : this.removeLoops();
@@ -208,6 +235,7 @@ class Gadget {
     //     }
     //   }
     // }
+    return this;
   }
 
   mergeStates() {
@@ -299,6 +327,53 @@ class Gadget {
                .minimizeStateLabels();
   }
 
+  stateUnion(other) {
+    if (JSON.stringify(this.locations) !== JSON.stringify(other.locations)) {
+      throw new Exception(`Gadget locations don't match! ${this.locations} vs ${other.locations}`);
+    }
+
+    const mappedThis = this.mapStates(s => JSON.stringify([0, s]));
+    const mappedOther = other.mapStates(s => JSON.stringify([1, s]));
+
+    return new Gadget(
+      `[${this.name}] + [${other.name}]`,
+      this.locations,
+      mappedThis.states.concat(mappedOther.states),
+      mappedThis.transitions.concat(mappedOther.transitions),
+      state => {const [i, s] = JSON.parse(state); return [this, other][i].acceptingPred(s)},
+      this.psState,
+      this.psLevelIndex,
+      state => {const [i, s] = JSON.parse(state); return i == 0 && this.psPorts(s)},
+    )
+  }
+
+  findInLibrary(gadgetLibrary) {
+    gadgetLibrary = gadgetLibrary || standardGadgetLibrary;
+    const simplifiedThis = this.mergeStates();
+    for (const other of gadgetLibrary) {
+      if (this.locations.length !== other.locations.length || this.states.length !== other.states.length) {
+        continue;
+      }
+
+      for (const perm of permutations(this.locations)) {
+        const mappedOther = other.mapLocations(loc => perm[other.locations.indexOf(loc)]);
+        if (simplifiedThis.stateUnion(mappedOther).simplify().states.length === simplifiedThis.states.length) {
+          if (mappedOther.mergeStates().states.length !== mappedOther.states.length) {
+            throw new Exception(`Something went wrong. Looks like library gadget ${mappedOther.name} was not fully simplified`);
+          }
+          return mappedOther;
+        }
+      }
+    }
+  }
+
+  printLibraryMatch(gadgetLibrary) {
+    const libraryGadget = this.findInLibrary(gadgetLibrary);
+    if (libraryGadget) {
+      consolePrint(`= ${libraryGadget.name}`);
+    }
+  }
+
   determinize(startState) {
     if (startState == undefined) {
       startState = this.states[0];
@@ -336,3 +411,27 @@ class Gadget {
     );
   }
 }
+
+const standardGadgetLibrary = [
+  new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
+  new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
+  new Gadget('Locking 2-toggle', [0, 1, 2, 3], [0, 1, 2], [[0, 0, 1, 1], [0, 2, 3, 2]]).symmetrize(),
+  new Gadget('2-Toggle', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).symmetrize(),
+  new Gadget('Toggle-Lock', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 0]]).symmetrize(),
+  new Gadget('Tripwire-Lock', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1], [0, 2, 3, 0]]).symmetrize(),
+  new Gadget('Tripwire-Toggle', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1], [0, 2, 3, 1]]).symmetrize(),
+  new Gadget('Directed Door', ['O', 'Ci', 'Co', 'Ti', 'To'], ['O', 'C'],
+    [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C'], ['C', 'Ci', 'Co', 'C'], ['O', 'Ti', 'To', 'O']]),
+  new Gadget('Directed SCD', ['O', 'Ci', 'Co'], ['O', 'C'],
+    [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C']]),
+  new Gadget('Undirected SCD', ['O', 'Ci', 'Co'], ['O', 'C'],
+    [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+  new Gadget('Directed SCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
+    [['O', 'Oi', 'Oo', 'O'], ['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]),
+  new Gadget('Undirected SCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
+    [['O', 'Oi', 'Oo', 'O'], ['O', 'Oo', 'Oi', 'O'], ['C', 'Oi', 'Oo', 'O'], ['C', 'Oo', 'Oi', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+  new Gadget('Directed SSCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
+    [['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]),
+  new Gadget('Undirected SSCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
+    [['C', 'Oi', 'Oo', 'O'], ['C', 'Oo', 'Oi', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+]
