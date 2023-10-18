@@ -27,13 +27,20 @@ const permutations = (inputArr) => {
 class Gadget {
   constructor(name, locations, states, transitions, acceptingPred, psState, psLevelIndex, psPorts, psLevels) {
     this.name = name;
-    this.states = [...new Set(states)];
-    this.locations = [...new Set(locations)];
+    this.states = [...new Set(states)].sort();
+    this.locations = [...new Set(locations)].sort();
+
+    transitions = [...transitions];
+    for (const s of this.states) {
+      for (const loc of this.locations) {
+        transitions.push([s, loc, loc, s]);
+      }
+    }
     this.transitions = transitions.filter(([fromState, fromLoc, toLoc, toState], i) =>
       i === transitions.findIndex(([fromState2, fromLoc2, toLoc2, toState2]) =>
         fromState2 === fromState && fromLoc2 === fromLoc && toLoc2 === toLoc && toState2 === toState
       )
-    );
+    ).sort();
     this.acceptingPred = acceptingPred == undefined ? s => true :
                          acceptingPred instanceof Function ? acceptingPred :
                          s => acceptingPred.includes(s);
@@ -252,12 +259,14 @@ class Gadget {
         for (const state2 of this.states) {
           if (state1 === state2 || !dominates.get(state1).get(state2)) continue;
           for (const fromLoc of this.locations) {
+            if (!dominates.get(state1).get(state2)) break;
             for (const toLoc of this.locations) {
               const toStates1 = this.performTransition(state1, fromLoc, toLoc);
               const toStates2 = this.performTransition(state2, fromLoc, toLoc);
-              if (!toStates2.every(toState2 => toStates1.some(toStates1 => dominates.get(toStates1).get(toState2)))) {
+              if (!toStates2.every(toState2 => toStates1.some(toState1 => dominates.get(toState1).get(toState2)))) {
                 dominates.get(state1).set(state2, false);
                 progress = true;
+                break;
               }
             }
           }
@@ -341,9 +350,9 @@ class Gadget {
       mappedThis.states.concat(mappedOther.states),
       mappedThis.transitions.concat(mappedOther.transitions),
       state => {const [i, s] = JSON.parse(state); return [this, other][i].acceptingPred(s)},
-      this.psState,
+      state => {const [i, s] = JSON.parse(state); return i == 0 && this.psState(s)},
       this.psLevelIndex,
-      state => {const [i, s] = JSON.parse(state); return i == 0 && this.psPorts(s)},
+      this.psPorts,
     )
   }
 
@@ -357,7 +366,7 @@ class Gadget {
 
       for (const perm of permutations(this.locations)) {
         const mappedOther = other.mapLocations(loc => perm[other.locations.indexOf(loc)]);
-        if (simplifiedThis.stateUnion(mappedOther).simplify().states.length === simplifiedThis.states.length) {
+        if (simplifiedThis.stateUnion(mappedOther).mergeStates().states.length === simplifiedThis.states.length) {
           if (mappedOther.mergeStates().states.length !== mappedOther.states.length) {
             throw new Exception(`Something went wrong. Looks like library gadget ${mappedOther.name} was not fully simplified`);
           }
@@ -413,10 +422,11 @@ class Gadget {
 }
 
 const standardGadgetLibrary = [
-  new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
-  new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
-  new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1]]),
-  new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
+  // new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
+  // new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
+  // new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1]]),
+  // new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
+  new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
   new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
   new Gadget('Locking 2-toggle', [0, 1, 2, 3], [0, 1, 2], [[0, 0, 1, 1], [0, 2, 3, 2]]).symmetrize(),
   new Gadget('2-Toggle', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).symmetrize(),
