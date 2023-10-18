@@ -89,10 +89,6 @@ class Gadget {
     return this.filter(null, null, fn);
   }
 
-  removeLoops() {
-    return this.filterTransitions((fromState, fromLoc, toLoc, toState) => fromLoc !== toLoc || fromState !== toState);
-  }
-
   map(fnLoc, fnState) {
     fnLoc = fnLoc || (l => l);
     fnState = fnState || (s => s);
@@ -161,7 +157,7 @@ class Gadget {
     };
   }
 
-  formatAsJsonHtml() {
+  formatAsJsonHtml(loops) {
     const escape = s => encodeURIComponent(JSON.stringify(s));
 
     const formatLocation = loc => `<span class="gadgetLocation" location="${escape(loc)}">${JSON.stringify(loc)}</span>`;
@@ -175,8 +171,12 @@ class Gadget {
         >[${formatStateLocation(fromState, fromLoc)}, ${formatStateLocation(toState, toLoc)}, ${formatState(toState)}]</span>`;
     };
 
+    const transitions = loops ? this.transitions :
+      this.transitions.filter(([fromState, fromLoc, toLoc, toState]) =>
+        fromLoc !== toLoc || fromState !== toState);
+
     const transitionsStr = this.states.map(fromState =>
-      `\n    ${formatState(fromState)}: [${this.transitions.filter(t => t[0] == fromState).map(formatTransition).join(', ')}]`
+      `\n    ${formatState(fromState)}: [${transitions.filter(t => t[0] == fromState).map(formatTransition).join(', ')}]`
     ).join(',');
     const str =
 `{
@@ -195,9 +195,8 @@ class Gadget {
   print(loops=false, performLibrarySearch=false) {
     const escape = s => encodeURIComponent(JSON.stringify(s));
 
-    const gadget = loops ? this : this.removeLoops();
-    console.log(gadget.toJSON());
-    consolePrint(gadget.formatAsJsonHtml(), true);
+    console.log(this.toJSON());
+    consolePrint(this.formatAsJsonHtml(loops), true);
 
     const stateElems = cache.getElementsByClassName('gadgetState');
     const locationElems = cache.getElementsByClassName('gadgetLocation');
