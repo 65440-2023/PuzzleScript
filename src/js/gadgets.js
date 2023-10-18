@@ -414,6 +414,9 @@ class Gadget {
 
 const standardGadgetLibrary = [
   new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
+  new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
+  new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1]]),
+  new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
   new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
   new Gadget('Locking 2-toggle', [0, 1, 2, 3], [0, 1, 2], [[0, 0, 1, 1], [0, 2, 3, 2]]).symmetrize(),
   new Gadget('2-Toggle', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).symmetrize(),
