@@ -66,7 +66,7 @@ function canGadgetify() {
     return true;
 }
 
-function gadgetifyLevel(levelIndex) {
+function gadgetifyLevel(levelIndex, maxStates=400) {
     function serializeLevel() {
         return level.objects.join();
     }
@@ -104,6 +104,10 @@ function gadgetifyLevel(levelIndex) {
                         gstateFromLevelString.set(newGstateStr, gstateToLevel.length);
                         queue.push(gstateToLevel.length);
                         gstateToLevel.push(backupLevel());
+                        if (gstateToLevel.length > maxStates) {
+                            consoleError(`Exceeded ${maxStates} states. Stopping!`);
+                            throw new Exception(`Exceeded ${maxStates} states. Stopping!`);
+                        }
                     }
                     const toState = gstateFromLevelString.get(newGstateStr);
                     transitions.push([fromState, fromPort, toPort, toState]);
