@@ -166,7 +166,7 @@ function showGadgetState(gadget, gstate) {
         setGameState(gadget.psState, ['loadLevel', gadget.psLevelIndex]);
     }
     console.log(`Loading state ${gstate} of gadget "${gadget.name}"`);
-    level = restoreLevel(gstate);
+    restoreLevel(gadget.psLevels(gstate));
     calculateRowColMasks();
     redraw();
 }
