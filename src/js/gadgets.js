@@ -27,7 +27,7 @@ const permutations = (inputArr) => {
 class Gadget {
   constructor(name, locations, states, transitions, acceptingPred, psState, psLevelIndex, psPorts, psLevels) {
     this.name = name;
-    this.states = [...new Set(states)].sort();
+    this.states = [...new Set(states)];
     this.locations = [...new Set(locations)].sort();
 
     transitions = [...transitions];
@@ -244,7 +244,9 @@ class Gadget {
     return this;
   }
 
-  mergeStates() {
+  mergeStates(startingState) {
+    startingState = startingState || this.states[0];
+
     // dominates[s][t] means that you'll always prefer being in state s over state t
     const dominates = new Map(this.states.map(s =>
       [s, new Map(this.states.map(t => 
@@ -273,9 +275,9 @@ class Gadget {
       }
     } while(progress);
   
-    // if two states dominate each other, we can replace one with another everywhere
+    // if two states dominate each other, we can replace one with another everywhere (preferring starting state)
     const gadget = this.mapStates(
-      s => this.states.find(s2 => dominates.get(s).get(s2) && dominates.get(s2).get(s))
+      s => [startingState].concat(this.states).find(s2 => dominates.get(s).get(s2) && dominates.get(s2).get(s))
     )
     // if a traversal leads to two states, and one dominates the other, we can delete the other transition
     return gadget.filterTransitions((fromState, fromLoc, toLoc, toState) =>
