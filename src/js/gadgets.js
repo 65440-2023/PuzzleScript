@@ -207,7 +207,7 @@ class Gadget {
         if (e.getAttribute('state') === escape(state)) {
           e.classList.add('clickable');
           e.addEventListener('click', () => {
-            showGadgetState(gadget, state);
+            showGadgetState(this, state);
           });
         }
       }
@@ -217,7 +217,7 @@ class Gadget {
         if (e.getAttribute('location') === escape(location)) {
           e.classList.add('clickable');
           e.addEventListener('click', () => {
-            showGadgetLocation(gadget, location);
+            showGadgetLocation(this, location);
           });
         }
       }
