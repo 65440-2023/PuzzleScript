@@ -161,7 +161,6 @@ function placePlayer(pos) {
     let cell = level.getCell(pos);
     cell.ior(state.playerMask);
     level.setCell(pos, cell);
-    calculateRowColMasks();
 }
 
 function showGadgetState(gadget, gstate) {
@@ -171,7 +170,6 @@ function showGadgetState(gadget, gstate) {
     }
     console.log(`Loading state ${gstate} of gadget "${gadget.name}"`);
     restoreLevel(gadget.psLevels(gstate));
-    calculateRowColMasks();
     redraw();
 }
 
