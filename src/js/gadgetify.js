@@ -111,7 +111,7 @@ function gadgetifyLevel(levelIndex, maxStates=400) {
                         gstateToLevel.push(backupLevel());
                         if (gstateToLevel.length > maxStates) {
                             consoleError(`Exceeded ${maxStates} states. Stopping!`);
-                            throw new Exception(`Exceeded ${maxStates} states. Stopping!`);
+                            throw new Error(`Exceeded ${maxStates} states. Stopping!`);
                         }
                     }
                     const toState = gstateFromLevelString.get(newGstateStr);

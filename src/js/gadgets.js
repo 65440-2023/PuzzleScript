@@ -350,7 +350,7 @@ class Gadget {
 
   stateUnion(other) {
     if (JSON.stringify(this.locations) !== JSON.stringify(other.locations)) {
-      throw new Exception(`Gadget locations don't match! ${this.locations} vs ${other.locations}`);
+      throw new Error(`Gadget locations don't match! ${this.locations} vs ${other.locations}`);
     }
 
     const mappedThis = this.mapStates(s => JSON.stringify([0, s]));
