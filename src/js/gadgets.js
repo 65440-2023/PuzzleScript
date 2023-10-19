@@ -437,7 +437,7 @@ const standardGadgetLibrary = [
   new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
   new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
   new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]).undirect(),
-  new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
+  new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 0, 1], [0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
   new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
   new Gadget('Directed NAND', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]),
   new Gadget('Undirected NAND', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).undirect(),
