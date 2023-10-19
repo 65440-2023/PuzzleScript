@@ -120,13 +120,24 @@ class Gadget {
     return this.mapStates(s => stateMap.get(s));
   }
 
-  symmetrize() {
+  flatMapTransitions(fn) {
     return new Gadget(
       this.name, this.locations, this.states,
-      this.transitions.concat(this.transitions.map(([fromState, fromLoc, toLoc, toState]) => [toState, toLoc, fromLoc, fromState])),
+      this.transitions.flatMap(([fromState, fromLoc, toState, toLoc]) =>
+          fn(fromState, fromLoc, toState, toLoc)),
       this.acceptingPred,
       this.psState, this.psLevelIndex, this.psPorts, this.psLevels,
-    )
+    );
+  }
+
+  undirect() {
+    return this.flatMapTransitions((fromState, fromLoc, toLoc, toState) =>
+      [[fromState, fromLoc, toLoc, toState], [fromState, toLoc, fromLoc, toState]]);
+  }
+
+  symmetrize() {
+    return this.flatMapTransitions((fromState, fromLoc, toLoc, toState) =>
+      [[fromState, fromLoc, toLoc, toState], [toState, toLoc, fromLoc, fromState]]);
   }
 
   transitionsByStartState() {
@@ -423,12 +434,13 @@ class Gadget {
 }
 
 const standardGadgetLibrary = [
-  // new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
-  // new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
-  // new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1], [0, 1, 0, 1]]),
-  // new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
+  new Gadget('Diode', [0, 1], [0], [[0, 0, 1, 0]]),
+  new Gadget('Dicrumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]),
+  new Gadget('Crumbler', [0, 1], [0, 1], [[0, 0, 1, 1]]).undirect(),
+  new Gadget('Shortcut', [0, 1], [0, 1], [[0, 0, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1]]),
   new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
-  new Gadget('1-Toggle', [0, 1], [0, 1], [[0, 0, 1, 1]]).symmetrize(),
+  new Gadget('Directed NAND', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]),
+  new Gadget('Undirected NAND', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).undirect(),
   new Gadget('Locking 2-toggle', [0, 1, 2, 3], [0, 1, 2], [[0, 0, 1, 1], [0, 2, 3, 2]]).symmetrize(),
   new Gadget('2-Toggle', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 1]]).symmetrize(),
   new Gadget('Toggle-Lock', [0, 1, 2, 3], [0, 1], [[0, 0, 1, 1], [0, 2, 3, 0]]).symmetrize(),
@@ -439,13 +451,13 @@ const standardGadgetLibrary = [
   new Gadget('Directed SCD', ['O', 'Ci', 'Co'], ['O', 'C'],
     [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C']]),
   new Gadget('Undirected SCD', ['O', 'Ci', 'Co'], ['O', 'C'],
-    [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+    [['C', 'O', 'O', 'O'], ['O', 'Ci', 'Co', 'C']]).undirect(),
   new Gadget('Directed SCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
     [['O', 'Oi', 'Oo', 'O'], ['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]),
   new Gadget('Undirected SCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
-    [['O', 'Oi', 'Oo', 'O'], ['O', 'Oo', 'Oi', 'O'], ['C', 'Oi', 'Oo', 'O'], ['C', 'Oo', 'Oi', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+    [['O', 'Oi', 'Oo', 'O'], ['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]).undirect(),
   new Gadget('Directed SSCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
     [['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]),
   new Gadget('Undirected SSCD', ['Oi', 'Oo', 'Ci', 'Co'], ['O', 'C'],
-    [['C', 'Oi', 'Oo', 'O'], ['C', 'Oo', 'Oi', 'O'], ['O', 'Ci', 'Co', 'C'], ['O', 'Co', 'Ci', 'C']]),
+    [['C', 'Oi', 'Oo', 'O'], ['O', 'Ci', 'Co', 'C']]).undirect(),
 ]
